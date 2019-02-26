@@ -1,6 +1,15 @@
 ﻿@{
-    ViewData["Title"] = "Home Page";
+    var listData = new List<SelectListItem>() { new SelectListItem { Text = "11", Value = "11" }, new SelectListItem { Text = "22", Value = "22" } };
+
 }
+
+@model UserInfo
+
+@Html.TextBoxFor(item => item.Account, Html.ValidFor(item => item.Account))
+
+@Html.TextBoxFor(item => item.Name, Html.ValidFor(item => item.Name))
+
+@Html.DropDownListFor(item => item.OR_ID, listData, "请选", new { @class = "aaaa" })
 
 <div id="myCarousel" class="carousel slide" data-ride="carousel" data-interval="6000">
     <ol class="carousel-indicators">

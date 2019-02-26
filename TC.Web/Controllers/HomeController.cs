@@ -4,15 +4,32 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.EntityFrameworkCore;
+using TC.Model.Entitys;
+using TC.Persistence;
 using TC.Web.Models;
 
 namespace TC.Web.Controllers
 {
     public class HomeController : Controller
     {
-        public IActionResult Index()
+        private SqlContext db;
+
+        public HomeController(SqlContext context)
         {
-            return View();
+            this.db = context;
+        }
+
+        public async Task<IActionResult> Index()
+        {
+            var model = new UserInfo();
+            //if (!this.TryValidateModel(model))
+            //{
+            //    return Json(new { state = false, value = this.ModelState });
+            //}
+
+            // var fist = await db.UserInfo.FirstOrDefaultAsync();
+            return View(model);
         }
 
         public IActionResult About()

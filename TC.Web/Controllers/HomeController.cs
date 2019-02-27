@@ -3,58 +3,183 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
+using Infrastructure.Utility;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Options;
 using TC.Model.Entitys;
 using TC.Persistence;
 using TC.Web.Models;
+using TC.Web.Utility;
 
 namespace TC.Web.Controllers
 {
     public class HomeController : Controller
     {
-        private SqlContext db;
+        /// <summary>
+        /// 验证码缓存
+        /// </summary>
+        private static CacheCliens<string> cliens = new CacheCliens<string>(TimeSpan.FromMinutes(1));
 
-        public HomeController(SqlContext context)
+        /// <summary>
+        /// 数据库连接上下文
+        /// </summary>
+        public readonly SqlContext db;
+
+        /// <summary>
+        /// 构造函数，注入Sql上下文
+        /// </summary>
+        /// <param name="sqlContext"></param>
+        public HomeController(SqlContext sqlContext)
         {
-            this.db = context;
+            this.db = sqlContext;
         }
 
-        public async Task<IActionResult> Index()
+        /// <summary>
+        /// 登录首页
+        /// </summary>
+        /// <returns></returns>
+        public IActionResult Index()
         {
-            var model = new UserInfo();
-            //if (!this.TryValidateModel(model))
+            var d = db.UserInfo.FirstOrDefault();
+            return View();
+        }
+
+        /// <summary>
+        /// 登录验证
+        /// </summary>
+        /// <param name="account">账号</param>
+        /// <param name="password">密码</param>
+        /// <param name="code">验证码</param>
+        /// <param name="refer">来源页</param>
+        /// <returns></returns>
+        [HttpPost]
+        public async Task<JsonResult> Login(string account, string password, string code, string refer)
+        {
+            var checkResult = this.CheckLoginParamters(code, password, code);
+            if (checkResult != null)
+            {
+                return checkResult;
+            }
+
+            var passwordMd5 = Encryption.GetMD5(password);
+            var userInfo = await db.UserInfo.Where(item => item.Account == account && item.Password == passwordMd5).AsNoTracking().FirstOrDefaultAsync();
+
+            //if (userInfo == null)
             //{
-            //    return Json(new { state = false, value = this.ModelState });
+            //    return Json(new { state = false, value = "账号或密码不正确!" });
             //}
 
-            // var fist = await db.UserInfo.FirstOrDefaultAsync();
-            return View(model);
+            //if (userInfo.Enable == false)
+            //{
+            //    return Json(new { state = false, value = "该帐号已被禁用,请与管理员联系!" });
+            //}
+
+            var redirect = "/system/center";
+            if (string.IsNullOrEmpty(refer) == false)
+            {
+                var referUrl = new Uri(refer);
+                if (referUrl.Host == Request.Host.Host)
+                {
+                    redirect = refer;
+                }
+            }
+            return Json(new { state = true, value = redirect });
         }
 
-        public IActionResult About()
+
+        /// <summary>
+        /// 检测登录
+        /// </summary>
+        /// <param name="account">账号</param>
+        /// <param name="password">密码</param>
+        /// <param name="code">验证码</param>
+        /// <returns></returns>
+        private JsonResult CheckLoginParamters(string account, string password, string code)
         {
-            ViewData["Message"] = "Your application description page.";
+            if (account.IsNullOrEmpty())
+            {
+                return Json(new { state = false, value = "账号不能为空!" });
+            }
 
-            return View();
+            if (password.IsNullOrEmpty())
+            {
+                return Json(new { state = false, value = "密码不能为空!" });
+            }
+
+            if (code.IsNullOrEmpty())
+            {
+                return Json(new { state = false, value = "验证码不能为空!" });
+            }
+
+            var codeCookie = Request.Cookies["CodeKey"];
+            if (codeCookie == null)
+            {
+                return Json(new { state = false, value = "参数异常!" });
+            }
+
+            if (!this.VerifyUserInputCode(code))
+            {
+                return Json(new { state = false, value = "验证码过期或不正确,请刷新验证码!" });
+            }
+
+
+
+            // 删除验证码
+            //UserSession.Remove(codeCookie.Value);
+            //codeCookie.Expires = DateTime.Today.AddYears(-1);
+            //Response.AppendCookie(codeCookie);
+            return null;
         }
 
-        public IActionResult Contact()
-        {
-            ViewData["Message"] = "Your contact page.";
 
-            return View();
-        }
-
-        public IActionResult Privacy()
-        {
-            return View();
-        }
-
+        /// <summary>
+        /// 错误页面
+        /// </summary>
+        /// <returns></returns>
         [ResponseCache(Duration = 0, Location = ResponseCacheLocation.None, NoStore = true)]
         public IActionResult Error()
         {
             return View(new ErrorViewModel { RequestId = Activity.Current?.Id ?? HttpContext.TraceIdentifier });
+        }
+
+        /// <summary>
+        /// 获取验证码
+        /// </summary>
+        /// <returns></returns>
+
+        public IActionResult ValidateCode()
+        {
+            var _vierificationCodeServices = new VerificationCode();
+            string code = "";
+            System.IO.MemoryStream ms = _vierificationCodeServices.Create(out code);
+            code = code.ToLower();//验证码不分大小写  
+            Response.Body.Dispose();
+            var token = Guid16.NewGuid().ToString();
+            cliens.AddOrUpdate(token, code);
+            Response.Cookies.Append("validatecode", token);
+            return File(ms.ToArray(), @"image/png");
+        }
+
+        /// <summary>
+        /// 验证用户提交的验证码
+        /// </summary>
+        /// <param name="userVerCode"></param>
+        /// <returns></returns>
+        public bool VerifyUserInputCode(string code)
+        {
+            var token = string.Empty;
+            Request.Cookies.TryGetValue("validatecode", out token);
+            var clinesCode = cliens.Get(token);
+            Response.Cookies.Delete("validatecode");
+            cliens.Delete(token);
+            if (code.ToLower().Equals(clinesCode, StringComparison.Ordinal))
+            {
+                return true;
+            }
+            return false;
         }
     }
 }

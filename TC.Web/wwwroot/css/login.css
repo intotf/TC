@@ -1,0 +1,14 @@
+.login { background-color: #444 !important; font-family: 'Microsoft YaHei'; }
+.login .logo { width: 247px; margin: 0 auto; margin-top: 60px; padding: 15px; text-align: center; color: #fff; }
+.login .content { background-color: #fff; width: 291px; margin: 0 auto; margin-bottom: 0px; padding: 30px; padding-top: 20px; padding-bottom: 15px; }
+.login .control-group i { opacity: 0.2; filter: alpha(opacity=20); margin-left: 4px; margin-top: 5px; }
+.login input, .login input:focus { border: none; box-shadow: none; margin: 0; }
+.input-icon { border-left: 2px solid #35aa47; padding: 4px; padding-left: 0px; }
+.controls { border: 1px solid #ddd; border-left: 0px; border-radius: 2px; }
+.controls.active { border-color: #35aa47; }
+.message { color: red; }
+input[type=text]:focus { outline: 0px none; }
+input[type=password]:focus { outline: 0px none; }
+input[name=Code] { width: 168px; }
+.input-icon img { height: 30px; cursor: pointer; }
+.btn { width: 100px; height: 34px; font-size: 14px; }

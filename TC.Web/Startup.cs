@@ -1,15 +1,15 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Builder;
+﻿using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
+using NLog.Extensions.Logging;
+using NLog.Web;
 using TC.Persistence;
+using TC.Web.MvcFilters;
 
 namespace TC.Web
 {
@@ -31,13 +31,17 @@ namespace TC.Web
                 options.CheckConsentNeeded = context => true;
                 options.MinimumSameSitePolicy = SameSiteMode.None;
             });
+            services.AddMvc(o =>
+            {
+                o.Filters.Add<HttpGlobalExceptionFilter>();
+            }).SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
 
             services.AddDbContext<SqlContext>((o) =>
             {
                 o.UseSqlServer(Configuration.GetConnectionString("DbContext"));
             });
 
-            services.AddMvc().SetCompatibilityVersion(CompatibilityVersion.Version_2_1);
+            services.Configure<WebConfig>(Configuration.GetSection(nameof(WebConfig)));
         }
 
         // This method gets called by the runtime. Use this method to configure the HTTP request pipeline.

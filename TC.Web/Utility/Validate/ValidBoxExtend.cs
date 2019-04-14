@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using TC.Validate;
+﻿using TC.Validate;
 
-namespace System.Web.Mvc.Html
+namespace Microsoft.AspNetCore.Mvc.Rendering
 {
     /// <summary>
     /// 验证框扩展 

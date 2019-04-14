@@ -1,0 +1,84 @@
+﻿@model UserInfo
+
+@section Script{
+    <script type="text/javascript">
+        function save() {
+            $(".form-horizontal").validBox(function (r) {
+                if (!r) return;
+                var indexload = layer.load(1, { shade: [0.1, '#fff'] });
+                $("button").attr("disabled", "disabled");
+                $.post('@Url.Action()', $(".form-horizontal").serialize(), function (data) {
+                    layer.close(indexload);
+                    if (data.state) {
+                        toastr.success(data.value);
+                    } else {
+                        toastr.error(data.value);
+                    }
+                    $("button").removeAttr("disabled");
+                });
+            });
+        }
+    </script>
+}
+
+
+@section Style{
+    <style type="text/css">
+        button.valid-error {
+            background: none;
+            background-color: #5bc0de;
+        }
+    </style>
+}
+
+<div class="clearfix"></div>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <!--标题和操作按钮-->
+            <div class="x_title">
+                <h2>个人资料 <small>/ 修改密码</small></h2>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <form class="form-horizontal form-label-left" id="myForm">
+                    <div class="item form-group" style="margin-top: 15px;">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                            密码
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            <input id="Password" name="Password" value="" class="form-control" />
+                        </div>
+                        如不修改请为空
+                    </div>
+                    <div class="item form-group">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardType">
+                            姓名
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.TextBoxFor(item => item.Name, new { @class = "form-control" })
+                        </div>
+                    </div>
+                    <div class="item form-group">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardType">
+                            手机号
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.TextBoxFor(item => item.Mobile, new { @class = "form-control" })
+                        </div>
+                    </div>
+
+                    <div class="ln_solid"></div>
+                    <div class="row col-md-12">
+                        <div class="form-group">
+                            <div class="col-md-12 col-sm-12 col-xs-12" style="text-align: center">
+                                <button type="button" class="btn btn-info  btn-sm" onclick="save(); return false;"><i class="fa fa-save"></i>保存</button>
+                                <button type="button" class="btn btn-info  btn-sm" onclick="history.back(); return false;"><i class="fa fa-mail-reply"></i>返 回</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

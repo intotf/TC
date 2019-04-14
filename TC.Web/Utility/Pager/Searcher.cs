@@ -1,24 +1,40 @@
 ﻿using Infrastructure.Utility;
 using Microsoft.AspNetCore.Http;
+using PredicateLib;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
-using System.Threading.Tasks;
 using System.Web;
 
-namespace TC.Web.Utility.Page
+namespace System
 {
     /// <summary>
     /// 提供搜索内容查询
     /// </summary>
     public class Searcher
     {
-        private HttpContext _context;
+        /// <summary>
+        /// Http请求
+        /// </summary>
+        private readonly IHttpContextAccessor _httpContextAccessor;
 
-        public Searcher(HttpContext context)
+        /// <summary>
+        /// 初始化
+        /// </summary>
+        /// <param name="httpContextAccessor"></param>
+        /// <returns></returns>
+        public static Searcher Init(IHttpContextAccessor httpContextAccessor)
         {
-            this._context = context;
+            return new Searcher(httpContextAccessor);
+        }
+
+        /// <summary>
+        /// 构造函数获取Http 上下文
+        /// </summary>
+        private Searcher(IHttpContextAccessor httpContextAccessor)
+        {
+            _httpContextAccessor = httpContextAccessor;
         }
 
         /// <summary>
@@ -28,7 +44,7 @@ namespace TC.Web.Utility.Page
         {
             get
             {
-                return this.GetValue("OrderBy");
+                return GetValue("OrderBy");
             }
         }
 
@@ -39,7 +55,7 @@ namespace TC.Web.Utility.Page
         {
             get
             {
-                return this.GetValue("Keyword");
+                return GetValue("Keyword");
             }
         }
 
@@ -50,24 +66,35 @@ namespace TC.Web.Utility.Page
         /// <returns></returns>
         public string GetValue(string name)
         {
-            var cookie = this._context.Request.Cookies["search"];
-            if (cookie == null)
+            var cookies = _httpContextAccessor.HttpContext.Request.Cookies["search"];
+            if (cookies == null)
             {
                 return null;
             }
+            //OR_Name=1&Name=2&Account=3&Mobile=4
+            cookies = HttpUtility.UrlDecode(cookies);
+            foreach (var cookie in cookies.Split("&"))
+            {
 
-            var values = new string[0]; // cookie.Values.GetValues(name);
-            if (values == null || values.Length == 0)
-            {
-                return null;
+                var item = cookie.Split("=");
+                if (item[0] == name)
+                {
+                    return item[1];
+                }
             }
+            return null;
+            //var values = cookie.Values.GetValues(name);
+            //if (values == null || values.Length == 0)
+            //{
+            //    return null;
+            //}
 
-            var value = HttpUtility.UrlDecode(values.FirstOrDefault()).Trim();
-            if (value.IsNullOrEmpty())
-            {
-                return null;
-            }
-            return value;
+            //var value = HttpUtility.UrlDecode(values.FirstOrDefault()).Trim();
+            //if (value.IsNullOrEmpty())
+            //{
+            //    return null;
+            //}
+            return cookies;
         }
 
         /// <summary>
@@ -75,154 +102,27 @@ namespace TC.Web.Utility.Page
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public Searcher<T> True<T>()
+        public Condition<T> Condition<T>()
         {
-            return new Searcher<T>(Where.True<T>(), this._context);
+            var items = GetConditionItems<T>();
+            return new Condition<T>(items);
         }
 
         /// <summary>
-        /// 表示默认为false的搜索结果
+        /// 从Cookie获取搜索条件
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <returns></returns>
-        public Searcher<T> False<T>()
+        private IEnumerable<ConditionItem<T>> GetConditionItems<T>()
         {
-            return new Searcher<T>(Where.True<T>(), this._context);
-        }
-    }
-
-    /// <summary>
-    /// 表示搜索结果
-    /// </summary>
-    /// <typeparam name="T"></typeparam>
-    public class Searcher<T>
-    {
-        private HttpContext _context;
-
-        /// <summary>
-        /// 当前表达式
-        /// </summary>
-        private Expression<Func<T, bool>> exp;
-
-        /// <summary>
-        /// 表示搜索结果
-        /// </summary>
-        /// <param name="trueOrFalse"></param>
-        public Searcher(Expression<Func<T, bool>> trueOrFalse, HttpContext httpContext)
-        {
-            this._context = httpContext;
-            this.exp = trueOrFalse;
-        }
-
-        /// <summary>
-        /// 获取表达式
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector"></param>
-        /// <param name="op"></param>
-        /// <returns></returns>
-        private Expression<Func<T, bool>> GetPredicate<TKey>(Expression<Func<T, TKey>> keySelector, Operator op)
-        {
-            var field = keySelector.Body.OfType<MemberExpression>().Member.Name;
-            var value = new Searcher(this._context).GetValue(field);
-            if (string.IsNullOrWhiteSpace(value))
+            foreach (var member in ConditionItem<T>.TypeProperties)
             {
-                return null;
+                var value = GetValue(member.Name);
+                if (value.IsNullOrEmpty() == false)
+                {
+                    yield return new ConditionItem<T>(member, value, null);
+                }
             }
-            else
-            {
-                var targetValue = Converter.Cast<TKey>(value);
-                return Where.GeneratePredicate<T, TKey>(keySelector, targetValue, op);
-            }
-        }
-
-        /// <summary>
-        /// And运算
-        /// 文本类型为Contains
-        /// 其它类型为Equal
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector">健</param>
-        /// <returns></returns>
-        public Searcher<T> And<TKey>(Expression<Func<T, TKey>> keySelector)
-        {
-            var op = Operator.Equal;
-            if (typeof(TKey) == typeof(string))
-            {
-                op = Operator.Contains;
-            }
-            return this.And(keySelector, op);
-        }
-
-        /// <summary>
-        /// And运算
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector">健</param>
-        /// <param name="op">操作符</param>
-        /// <returns></returns>
-        public Searcher<T> And<TKey>(Expression<Func<T, TKey>> keySelector, Operator op)
-        {
-            var expRight = this.GetPredicate(keySelector, op);
-            if (expRight != null)
-            {
-                this.exp = this.exp.And(expRight);
-            }
-            return this;
-        }
-
-        /// <summary>
-        /// Or运算
-        /// 文本类型为Contains
-        /// 其它类型为Equal
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector">健</param>
-        /// <returns></returns>
-        public Searcher<T> Or<TKey>(Expression<Func<T, TKey>> keySelector)
-        {
-            var op = Operator.Equal;
-            if (typeof(TKey) == typeof(string))
-            {
-                op = Operator.Contains;
-            }
-
-            return this.Or(keySelector, op);
-        }
-
-        /// <summary>
-        /// Or运算
-        /// </summary>
-        /// <typeparam name="TKey"></typeparam>
-        /// <param name="keySelector">健</param>
-        /// <param name="op">操作符</param>
-        /// <returns></returns>
-        public Searcher<T> Or<TKey>(Expression<Func<T, TKey>> keySelector, Operator op)
-        {
-            var expRight = this.GetPredicate(keySelector, op);
-            if (expRight != null)
-            {
-                this.exp = this.exp.Or(expRight);
-            }
-            return this;
-        }
-
-        /// <summary>
-        /// 转换为条件表达式
-        /// </summary>
-        /// <returns></returns>
-        public Expression<Func<T, bool>> ToExpression()
-        {
-            return this.exp;
-        }
-
-        /// <summary>
-        /// 转换为字符串
-        /// </summary>
-        /// <returns></returns>
-        public override string ToString()
-        {
-            return this.exp.ToString();
         }
     }
 }

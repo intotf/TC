@@ -1,0 +1,144 @@
+﻿@{
+    var orgItems = ViewBag.OrgSelectItems as IEnumerable<SelectListItem>;
+}
+
+@model UserInfo
+
+@section Script{
+    <script type="text/javascript">
+        function save() {
+            $(".form-horizontal").validBox(function (r) {
+                if (!r) return;
+                var indexload = layer.load(1, { shade: [0.1, '#fff'] });//0.1透明度的白色背景
+                $("button").attr("disabled", "disabled");
+                $.post('@Url.Action()', $(".form-horizontal").serialize(), function (data) {
+                    layer.close(indexload);
+                    if (data.state) {
+                        toastr.success(data.value);
+                        setTimeout(function () { history.back() }, 400);
+                    } else {
+                        toastr.error(data.value);
+                    }
+                    $("button").removeAttr("disabled");
+                });
+            });
+        }
+    </script>
+}
+
+<div class="clearfix"></div>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <!--标题和操作按钮-->
+            <div class="x_title">
+                @Html.Partial("XTitle")
+                <ul class="nav navbar-right panel_toolbox btn-group">
+                    <li>
+                        <button onclick="history.go(-1)" class="btn btn-info btn-sm"><i class="fa fa-mail-reply"></i>返回</button>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <form class="form-horizontal form-label-left" id="myForm">
+                    @Html.HiddenFor(item => item.Id)
+                    @Html.HiddenFor(item => item.CreateTime)
+
+                    <div class="item form-group" style="margin-top: 15px;">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                            登录名
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @if (Model.Id.IsNullOrEmpty())
+                            {
+                                @Html.TextBoxFor(item => item.Account, Html.ValidFor(item => item.Account, new { @class = "form-control" }))
+                            }
+                            else
+                            {
+                                @Html.TextBoxReadonlyFor(item => item.Account, Html.ValidFor(item => item.Account, new { @class = "form-control" }))
+                            }
+                        </div>
+                    </div>
+                    <div class="item form-group" style="margin-top: 15px;">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                            密码
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @if (Model.Id.IsNullOrEmpty())
+                            {
+                                @Html.PasswordFor(item => item.Password, @Html.Valid().Required().Length(6, 15).AsHtmlAttribute(new { @class = "form-control" }))
+                            }
+                            else
+                            {
+                                @Html.PasswordFor(item => item.Password, @Html.Valid().Length(6, 15).AsHtmlAttribute(new { @class = "form-control" }))
+                            }
+                            <span>如不修改请为空</span>
+                        </div>
+                    </div>
+
+
+                    <div class="item form-group" style="margin-top: 15px;">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                            帐号状态
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.DropDownListFor(item => item.Enable, "启用", "禁用", new { @class = "form-control" })
+                        </div>
+                    </div>
+                    @if (Model.Id.IsNullOrEmpty())
+                    {
+                        <div class="item form-group" style="margin-top: 15px;">
+                            <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                                所属角色
+                            </label>
+                            <div class="col-md-7 col-sm-7 col-xs-12">
+                                @Html.DropDownListFor(item => item.OR_ID, orgItems, new { @class = "form-control" })
+                            </div>
+                        </div>
+                    }
+                    else
+                    {
+                        @Html.HiddenFor(item => item.OR_ID)
+                    }
+
+                    <div class="item form-group" style="margin-top: 15px;">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardLevel">
+                            邮箱
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.TextBoxFor(item => item.EMail, Html.ValidFor(item => item.EMail, new { @class = "form-control" }))
+                        </div>
+                    </div>
+                    <div class="item form-group">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardType">
+                            姓名
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.TextBoxFor(item => item.Name, new { @class = "form-control" })
+                        </div>
+                    </div>
+
+                    <div class="item form-group">
+                        <label class="control-label col-md-2 col-sm-2 col-xs-12" for="CardType">
+                            手机号
+                        </label>
+                        <div class="col-md-7 col-sm-7 col-xs-12">
+                            @Html.TextBoxFor(item => item.Mobile, new { @class = "form-control" })
+                        </div>
+                    </div>
+
+                    <div class="ln_solid"></div>
+                    <div class="row col-md-12">
+                        <div class="form-group">
+                            <div class="col-md-12 col-sm-12 col-xs-12" style="text-align: center">
+                                <button type="button" class="btn btn-info  btn-sm" onclick="save(); return false;"><i class="fa fa-save"></i>保存</button>
+                                <button type="button" class="btn btn-info  btn-sm" onclick="history.back(); return false;"><i class="fa fa-mail-reply"></i>返 回</button>
+                            </div>
+                        </div>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>

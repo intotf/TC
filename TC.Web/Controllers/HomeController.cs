@@ -14,6 +14,7 @@ using TC.Model.Entitys;
 using TC.Persistence;
 using TC.Web.Models;
 using TC.Web.Utility;
+using static System.Net.Mime.MediaTypeNames;
 
 namespace TC.Web.Controllers
 {
@@ -24,21 +25,27 @@ namespace TC.Web.Controllers
         /// </summary>
         public readonly SqlContext db;
 
+        public readonly IHttpContextAccessor httpContextAccessor;
+
         /// <summary>
         /// 构造函数，注入Sql上下文
         /// </summary>
         /// <param name="sqlContext"></param>
-        public HomeController(SqlContext sqlContext)
+        public HomeController(SqlContext sqlContext, IHttpContextAccessor _httpContextAccessor)
         {
             this.db = sqlContext;
+            this.httpContextAccessor = _httpContextAccessor;
         }
-
         /// <summary>
         /// 登录首页
         /// </summary>
         /// <returns></returns>
         public IActionResult Index()
         {
+            var host = new Test(httpContextAccessor);
+            var s = host.Show();
+
+
             var d = db.UserInfo.FirstOrDefault();
             return View();
         }
@@ -62,7 +69,7 @@ namespace TC.Web.Controllers
 
             var passwordMd5 = Encryption.GetMD5(password);
             var userInfo = await db.UserInfo.Where(item => item.Account == account && item.Password == passwordMd5).AsNoTracking().FirstOrDefaultAsync();
-
+            var s = db.UserInfo.ToArrayAsync();
             if (userInfo == null)
             {
                 return Json(new { state = false, value = "账号或密码不正确!" });

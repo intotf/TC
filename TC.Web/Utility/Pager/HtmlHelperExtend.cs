@@ -1,15 +1,12 @@
 ﻿using Infrastructure.Page;
 using Microsoft.AspNetCore.Html;
-using Microsoft.AspNetCore.Mvc.Rendering;
-using Microsoft.AspNetCore.Mvc.ViewFeatures;
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Text;
-using TC.Web.Utility.Page;
 
-namespace TC.Web.Utility.Pager
+namespace Microsoft.AspNetCore.Mvc.Rendering
 {
     /// <summary>
     /// Html分页相关扩展
@@ -37,11 +34,11 @@ namespace TC.Web.Utility.Pager
             var model = html.ViewData.Model;
             var container = new TagBuilder("div");
             container.Attributes.Add("id", "page-container");
-            // container.InnerHtml = 
-            return html.Partial(partialView, model);
-            // return new HtmlString(container.ToString());
-        }
 
+            container.MergeAttribute(partialView, html.Partial(partialView, model).ToString());
+            //container.InnerHtml = html.Partial(partialView, model).ToString();
+            return new HtmlString(container.ToString());
+        }
 
         /// <summary>
         /// 生成分页控件
@@ -62,8 +59,8 @@ namespace TC.Web.Utility.Pager
                     new SelectListItem() { Value = "50", Text = "50", Selected = model.PageSize == 50 },
                     new SelectListItem() { Value = "100", Text = "100", Selected = model.PageSize == 100 }
             };
-            //htmlBuilder.Append(html.DropDownList("pageSizebox", list, new { datapagesize = "", @style = "height:28px;" }).ToHtmlString());
-            //htmlBuilder.Append("条</div>");
+            htmlBuilder.Append(html.DropDownList("pageSizebox", list, new { datapagesize = "", @style = "height:28px;" }).ToString());
+            htmlBuilder.Append("条</div>");
             //htmlBuilder.Append(ajax.Pager(model,
             //    new PagerOptions
             //    {
@@ -86,8 +83,8 @@ namespace TC.Web.Utility.Pager
             //        OnBegin = "showMask($('#page-container'))",
             //    }).ToHtmlString());
 
-            //htmlBuilder.Append("<div class=\"PageIndexBox\"><span>转到第</span><input type=\"text\"  id=\"pagebox\" value=\"\" /><span>页</span><span><button class=\"btn btn-info btn-sm\" id=\"goBtn\">跳转</button></span></div>");
-            //htmlBuilder.Append("</div>");
+            htmlBuilder.Append("<div class=\"PageIndexBox\"><span>转到第</span><input type=\"text\"  id=\"pagebox\" value=\"\" /><span>页</span><span><button class=\"btn btn-info btn-sm\" id=\"goBtn\">跳转</button></span></div>");
+            htmlBuilder.Append("</div>");
 
             return new HtmlString(htmlBuilder.ToString());
         }
@@ -100,20 +97,20 @@ namespace TC.Web.Utility.Pager
         /// <param name="html"></param>
         /// <param name="keySelector"></param>
         /// <returns></returns>
-        public static HtmlString SortFor<T, TKey>(this HtmlHelper<T> html, Expression<Func<T, TKey>> keySelector) where T : IPageInfo
+        public static IHtmlContent SortFor<T, TKey>(this IHtmlHelper<T> html, Expression<Func<T, TKey>> keySelector) where T : IPageInfo
         {
-            object orderBy = null;//Searcher.OrderBy;
+            var orderBy = string.Empty;//  Searcher.OrderBy;
             var field = (keySelector.Body as MemberExpression).Member.Name.ToLower();
 
-            //if (orderBy == null || !orderBy.StartsWith(field, StringComparison.OrdinalIgnoreCase))
-            //{
-            return new HtmlString(string.Format("field=\"{0}\"", field));
-            //}
-            //else
-            //{
-            //    var sort = orderBy.EndsWith("desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
-            //    return new HtmlString(string.Format("field=\"{0}\" sort=\"{1}\"", field, sort));
-            //}
+            if (orderBy == null || !orderBy.StartsWith(field, StringComparison.OrdinalIgnoreCase))
+            {
+                return new HtmlString(string.Format("field=\"{0}\"", field));
+            }
+            else
+            {
+                var sort = orderBy.EndsWith("desc", StringComparison.OrdinalIgnoreCase) ? "desc" : "asc";
+                return new HtmlString(string.Format("field=\"{0}\" sort=\"{1}\"", field, sort));
+            }
         }
 
         /// <summary>
@@ -125,10 +122,10 @@ namespace TC.Web.Utility.Pager
         /// <param name="keySelector"></param>
         /// <param name="htmlAttribute"></param>
         /// <returns></returns>
-        public static IHtmlContent TextBoxSearchFor<T, TKey>(this HtmlHelper<T> html, Expression<Func<T, TKey>> keySelector, object htmlAttribute) where T : IPageInfo
+        public static IHtmlContent TextBoxSearchFor<T, TKey>(this IHtmlHelper<T> html, Expression<Func<T, TKey>> keySelector, object htmlAttribute) where T : IPageInfo
         {
             var field = keySelector.Body.OfType<MemberExpression>().Member.Name;
-            var value = "";//Searcher.GetValue(field);
+            var value = string.Empty;// Searcher.GetValue(field);
             return html.TextBox(field, value, htmlAttribute);
         }
 
@@ -143,10 +140,10 @@ namespace TC.Web.Utility.Pager
         /// <param name="optionLabel"></param>
         /// <param name="htmlAttribute"></param>
         /// <returns></returns>
-        public static IHtmlContent DrowdownListSearchFor<T, TKey>(this HtmlHelper<T> html, Expression<Func<T, TKey>> keySelector, IEnumerable<SelectListItem> selectList, string optionLabel, object htmlAttribute) where T : IPageInfo
+        public static IHtmlContent DrowdownListSearchFor<T, TKey>(this IHtmlHelper<T> html, Expression<Func<T, TKey>> keySelector, IEnumerable<SelectListItem> selectList, string optionLabel, object htmlAttribute) where T : IPageInfo
         {
             var field = keySelector.Body.OfType<MemberExpression>().Member.Name;
-            var value = "";//Searcher.GetValue(field);
+            var value = string.Empty;// Searcher.GetValue(field);
 
             var selectItems = selectList == null ? new SelectListItem[0] : selectList.ToArray();
             foreach (var item in selectItems)
@@ -159,21 +156,22 @@ namespace TC.Web.Utility.Pager
         /// <summary>
         /// IPagedList的实现
         /// </summary>
-        private class PagedList
+        private class PagedList : IPageInfo
         {
             private readonly IPageInfo pageInfo;
 
             public PagedList(IPageInfo page)
             {
                 this.pageInfo = page;
-                this.TotalItemCount = pageInfo.TotalCount;
+                this.TotalCount = pageInfo.TotalCount;
                 this.PageSize = pageInfo.PageSize;
-                this.CurrentPageIndex = pageInfo.PageIndex + 1;
+                this.PageIndex = pageInfo.PageIndex + 1;
             }
 
-            public int CurrentPageIndex { get; set; }
             public int PageSize { get; set; }
-            public int TotalItemCount { get; set; }
+            public int PageIndex { get; set; }
+            public int TotalCount { get; set; }
+
             public System.Collections.IEnumerator GetEnumerator()
             {
                 return this.pageInfo.GetEnumerator();

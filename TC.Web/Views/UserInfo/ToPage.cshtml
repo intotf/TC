@@ -1,0 +1,65 @@
+﻿@{
+    Layout = null;
+    var i = Model.PageIndex * Model.PageSize;
+}
+
+@model PageInfo<UserInfoView>
+
+<table class="table table-bordered table-hover">
+    <thead>
+        <tr>
+            <th>序号</th>
+            <th @Html.SortFor(item => item.Model.OR_Name)>组织名称</th>
+            <th @Html.SortFor(item => item.Model.Account)>登录帐号</th>
+            <th @Html.SortFor(item => item.Model.Name)>姓名</th>
+            <th @Html.SortFor(item => item.Model.Mobile)>手机号</th>
+            <th @Html.SortFor(item => item.Model.EMail)>邮箱</th>
+            <th @Html.SortFor(item => item.Model.Enable)>状态</th>
+            <th @Html.SortFor(item => item.Model.CreateTime)>创建时间</th>
+            <th>操作</th>
+        </tr>
+    </thead>
+    <tbody>
+        @if (Model == null || Model.Count() == 0)
+        {
+            <tr>
+                <td class="tdNoData">暂无数据</td>
+            </tr>
+        }
+        @foreach (var item in Model)
+        {
+            <tr>
+                <td>@(++i)</td>
+                <td>@item.OR_Name</td>
+                <td>@item.Account</td>
+                <td>@item.Name</td>
+                <td>@item.Mobile</td>
+                <td>@item.EMail</td>
+                <td>
+                    @if (item.Enable)
+                    {
+                        <span>启用</span>
+                    }
+                    else
+                    {
+                        <span>禁用</span>
+                    }
+                </td>
+                <td>@item.CreateTime.ToString("yyyy-MM-dd")</td>
+                <td>
+                    @if (Html.AllowAction(Actions.Edit))
+                    {
+                        <a href="@Url.Action("edit", new { id = item.U_ID })">修改</a>
+                    }
+
+                    @if (Html.AllowAction(Actions.Delete))
+                    {
+                        <a href="javascript:void(0)" onclick="del('@item.U_ID');">删除</a>
+                    }
+                </td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@Html.PageControl()

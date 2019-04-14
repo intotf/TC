@@ -18,6 +18,11 @@ namespace TC.Persistence
         public DbSet<UserInfo> UserInfo { get; set; }
 
         /// <summary>
+        /// 管理员视图
+        /// </summary>
+        public DbSet<UserInfoView> UserInfoView { get; set; }
+
+        /// <summary>
         /// 构造SqlContext 上下文
         /// </summary>
         /// <param name="options"></param>

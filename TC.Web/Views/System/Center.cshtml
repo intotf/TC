@@ -1,0 +1,50 @@
+﻿@{
+    ViewBag.Title = "center";
+}
+
+<div class="row">
+    <div class="x_panel">
+        <div class="x_title">
+            <h2>系统概要 <small></small></h2>
+            <div class="clearfix"></div>
+        </div>
+
+        <div class="row top_tiles">
+            <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                <div class="tile-stats">
+                    <a href="@Url.Action("index", "house")">
+                        <div class="icon">
+                            <i class="fa fa-user"></i>
+                        </div>
+                        <div class="count">1111</div>
+                        <h3>住户总数</h3>
+                    </a>
+                </div>
+            </div>
+
+            <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                <div class="tile-stats">
+                    <a href="@Url.Action("index", "card")">
+                        <div class="icon">
+                            <i class="fa fa-credit-card"></i>
+                        </div>
+                        <div class="count">2222</div>
+                        <h3>门卡总数</h3>
+                    </a>
+                </div>
+            </div>
+
+            <div class="animated flipInY col-lg-3 col-md-3 col-sm-6 col-xs-12">
+                <div class="tile-stats">
+                    <a href="@Url.Action("index", "entrancemachine")">
+                        <div class="icon">
+                            <i class="fa fa-desktop"></i>
+                        </div>
+                        <div class="count">3333</div>
+                        <h3>门口机总数</h3>
+                    </a>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>

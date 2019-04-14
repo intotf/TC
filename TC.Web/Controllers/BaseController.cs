@@ -28,6 +28,7 @@ namespace TC.Web.Controllers
         /// </summary>
         public readonly WebConfig webConfig;
 
+
         public BaseController()
         {
             this.db = (SqlContext)HttpContext.RequestServices.GetService(typeof(SqlContext));

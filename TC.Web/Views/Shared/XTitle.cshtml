@@ -1,0 +1,12 @@
+﻿@*@if (SystemMenu.ActiveNode != null)
+    {
+        if (SystemMenu.ActiveNode.IsPageNode)
+        {
+            <h2>@SystemMenu.ActiveNode.ParentNode.Name <small>/ @SystemMenu.ActiveNode.Name</small></h2>
+        }
+        else
+        {
+            <h2>@SystemMenu.ActiveNode.ParentNode.Name <small>/ @SystemMenu.ActiveNode.ActionEnum.GetFieldDisplay()</small></h2>
+        }
+    }*@
+<h2>导航菜单 <small>/ 列表</small></h2>

@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Linq;
 using System.Threading.Tasks;
 using Infrastructure.Utility;
+using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Configuration;
@@ -18,11 +19,6 @@ namespace TC.Web.Controllers
 {
     public class HomeController : Controller
     {
-        /// <summary>
-        /// 验证码缓存
-        /// </summary>
-        private static CacheCliens<string> cliens = new CacheCliens<string>(TimeSpan.FromMinutes(1));
-
         /// <summary>
         /// 数据库连接上下文
         /// </summary>
@@ -67,16 +63,22 @@ namespace TC.Web.Controllers
             var passwordMd5 = Encryption.GetMD5(password);
             var userInfo = await db.UserInfo.Where(item => item.Account == account && item.Password == passwordMd5).AsNoTracking().FirstOrDefaultAsync();
 
-            //if (userInfo == null)
-            //{
-            //    return Json(new { state = false, value = "账号或密码不正确!" });
-            //}
+            if (userInfo == null)
+            {
+                return Json(new { state = false, value = "账号或密码不正确!" });
+            }
 
-            //if (userInfo.Enable == false)
-            //{
-            //    return Json(new { state = false, value = "该帐号已被禁用,请与管理员联系!" });
-            //}
+            if (userInfo.Enable == false)
+            {
+                return Json(new { state = false, value = "该帐号已被禁用,请与管理员联系!" });
+            }
 
+            var userToken = Guid16.NewGuid().ToString();
+            WebCache.userCache.AddOrUpdate(userToken, userInfo);
+            Response.Cookies.Append(WebCache.userCookieKey, userToken, new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddDays(1)
+            });
             var redirect = "/system/center";
             if (string.IsNullOrEmpty(refer) == false)
             {
@@ -114,18 +116,10 @@ namespace TC.Web.Controllers
                 return Json(new { state = false, value = "验证码不能为空!" });
             }
 
-            var codeCookie = Request.Cookies["CodeKey"];
-            if (codeCookie == null)
-            {
-                return Json(new { state = false, value = "参数异常!" });
-            }
-
             if (!this.VerifyUserInputCode(code))
             {
                 return Json(new { state = false, value = "验证码过期或不正确,请刷新验证码!" });
             }
-
-
 
             // 删除验证码
             //UserSession.Remove(codeCookie.Value);
@@ -158,8 +152,11 @@ namespace TC.Web.Controllers
             code = code.ToLower();//验证码不分大小写  
             Response.Body.Dispose();
             var token = Guid16.NewGuid().ToString();
-            cliens.AddOrUpdate(token, code);
-            Response.Cookies.Append("validatecode", token);
+            WebCache.codeCache.AddOrUpdate(token, code);
+            Response.Cookies.Append(WebCache.codeCookieKey, token, new CookieOptions
+            {
+                Expires = DateTimeOffset.Now.AddMinutes(1)
+            });
             return File(ms.ToArray(), @"image/png");
         }
 
@@ -170,11 +167,9 @@ namespace TC.Web.Controllers
         /// <returns></returns>
         public bool VerifyUserInputCode(string code)
         {
-            var token = string.Empty;
-            Request.Cookies.TryGetValue("validatecode", out token);
-            var clinesCode = cliens.Get(token);
-            Response.Cookies.Delete("validatecode");
-            cliens.Delete(token);
+            var token = Request.Cookies[WebCache.codeCookieKey];
+            var clinesCode = WebCache.codeCache.Get(token);
+            WebCache.codeCache.Delete(token);
             if (code.ToLower().Equals(clinesCode, StringComparison.Ordinal))
             {
                 return true;

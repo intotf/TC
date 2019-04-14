@@ -1,0 +1,71 @@
+﻿@model PageInfo<UserInfoView>
+
+
+<script type="text/javascript">
+        function del(id) {
+            layer.confirm('确定要删除该记录吗？', function (index) {
+                $.post('@Url.Action("Remove")', { id: id }, function (data) {
+                    layer.closeAll();
+                    if (data.state) {
+                        toastr.success(data.value);
+                        setTimeout(function () { location.reload(); }, 400);
+                    } else {
+                        toastr.error(data.value);
+                    }
+                });
+            });
+        }
+
+        function unLimit(account) {
+            $.post('@Url.Action("unLimit")', { account: account }, function (data) {
+                if (data.state) {
+                    toastr.success(data.value);
+                } else {
+                    toastr.error(data.value);
+                }
+            });
+        }
+</script>
+
+<div class="clearfix"></div>
+<div class="row">
+    <div class="col-md-12 col-sm-12 col-xs-12">
+        <div class="x_panel">
+            <!--标题和操作按钮-->
+            <div class="x_title">
+                @Html.Partial("XTitle")
+                <ul class="nav navbar-right panel_toolbox btn-group">
+                    <li>
+
+                        <button onclick="window.location='@Url.Action("create")'" class="btn btn-info btn-sm"><i class="fa fa-plus"></i>新增</button>
+                    </li>
+                </ul>
+                <div class="clearfix"></div>
+            </div>
+            <div class="x_content">
+                <!--条件-->
+                @using (Html.PageSearchForm())
+                {
+                    <div class="row form-group">
+                        @*<div class="col-md-2 col-sm-2 col-xs-12">
+                                @Html.TextBoxSearchFor(item => item.Model.OR_Name, new { placeholder = "请输入组织名", @class = "form-control input-sm" })
+                            </div>
+                            <div class="col-md-2 col-sm-2 col-xs-12">
+                                @Html.TextBoxSearchFor(item => item.Model.Name, new { placeholder = "请输入姓名", @class = "form-control input-sm" })
+                            </div>
+                            <div class="col-md-2 col-sm-2 col-xs-12">
+                                @Html.TextBoxSearchFor(item => item.Model.Account, new { placeholder = "请输入登录帐号", @class = "form-control input-sm" })
+                            </div>
+                            <div class="col-md-2 col-sm-2 col-xs-12">
+                                @Html.TextBoxSearchFor(item => item.Model.Mobile, new { placeholder = "请输入手机号", @class = "form-control input-sm" })
+                            </div>*@
+                        <button class="btn btn-sm  btn-info" type="submit" style="vertical-align: top;margin-left:10px;"><i class="fa fa-search"></i>查询</button>
+                    </div>
+                }
+                <!--列表-->
+                @Html.PageContainer()
+            </div>
+            <div class="clearfix"></div>
+        </div>
+    </div>
+</div>
